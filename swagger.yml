@@ -411,6 +411,52 @@ paths:
       tags:
       - Board
     put:
+      description: "\n    - 게시글을 수정 합니다.\n    - 이미지는 최대 5장 업로드 가능합니다.\n    - 이미지의
+        각 파일은 최대 10MB 입니다.\n    - 제목은 한글 및 공백 포함 최대 30자까지 허용 합니다.\n    - 내용은 최대 1,000Byte까지
+        허용 합니다.\n    - 이미 생성된 이미지들은 모두 삭제하고 입력 받은 이미지를 생성 합니다.\n    "
+      operationId: BoardController_updateBoard
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 게시글의 ID
+        schema:
+          type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateBoardDto"
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/UpdateBoardResponseDto"
+      summary: 게시글을 수정 합니다.
+      tags:
+      - Board
+    delete:
+      description: "\n    - 게시글을 삭제 합니다.\n    - 내역이 남지 않기 때문에 삭제 이후 복구 할 수 없습니다.\n
+        \   "
+      operationId: BoardController_deleteBoard
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 게시글의 ID
+        schema:
+          type: number
+      responses:
+        '200':
+          description: ''
+      summary: 게시글을 삭제 합니다.
+      tags:
+      - Board
+  "/api/boards/{id}/comments/{commentId}":
+    put:
       description: |2-
 
               - 댓글의 ID를 입력 받아 수정 합니다.
@@ -858,7 +904,7 @@ components:
         boardCategory:
           type: string
           description: 게시글의 카테고리
-        isLike:
+        isLikeCliked:
           type: boolean
           description: 사용자가 게시글의 좋아요를 클릭 했는지 여부
       required:
@@ -867,7 +913,7 @@ components:
       - content
       - imageList
       - boardCategory
-      - isLike
+      - isLikeCliked
     GetMyReviewListDto:
       type: object
       properties:
@@ -883,7 +929,7 @@ components:
         content:
           type: string
           description: 리뷰 내용
-        isLike:
+        isLikeCliked:
           type: boolean
           description: 사용자가 리뷰 좋아요를 클릭 했는지 여부
       required:
@@ -891,7 +937,7 @@ components:
       - placeId
       - title
       - content
-      - isLike
+      - isLikeCliked
     UpdateUserDto:
       type: object
       properties:
@@ -951,7 +997,7 @@ components:
         content:
           type: string
           description: 게시글의 내용
-        isLike:
+        isLikeCliked:
           type: boolean
           description: 사용자가 게시글의 좋아요를 클릭 했는지 여부
         imageList:
@@ -963,8 +1009,20 @@ components:
       - category
       - title
       - content
-      - isLike
+      - isLikeCliked
       - imageList
+    Author:
+      type: object
+      properties:
+        id:
+          type: number
+          description: 게시글 작성자 ID
+        isLikeCliked:
+          type: boolean
+          description: 작성자가 해당 게시글의 좋아요 버튼을 클릭 했는지 여부
+      required:
+      - id
+      - isLikeCliked
     CommentList:
       type: object
       properties:
@@ -1005,6 +1063,10 @@ components:
           format: date-time
           type: string
           description: 게시글 작성 날짜
+        author:
+          description: 게시글 작성자
+          allOf:
+          - "$ref": "#/components/schemas/Author"
         imageList:
           description: 이미지 리스트
           type: array
@@ -1021,6 +1083,7 @@ components:
       - content
       - likeCount
       - createdAt
+      - author
       - imageList
       - commentList
     CreateBoardDto:
@@ -1139,7 +1202,7 @@ components:
         content:
           type: string
           description: 리뷰의 내용
-        isLike:
+        isLikeCliked:
           type: boolean
           description: 리뷰의 좋아요 상태
       required:
@@ -1148,7 +1211,7 @@ components:
       - imageUrl
       - title
       - content
-      - isLike
+      - isLikeCliked
     GetPlaceResponseDto:
       type: object
       properties:
@@ -1220,13 +1283,13 @@ components:
         conent:
           type: string
           description: 리뷰의 내용
-        isLike:
+        isLikeCliked:
           type: boolean
           description: 좋아요 선택 여부
       required:
       - title
       - conent
-      - isLike
+      - isLikeCliked
     CreatePlaceReviewResponseDto:
       type: object
       properties:
@@ -1244,7 +1307,7 @@ components:
         conent:
           type: string
           description: 리뷰의 내용
-        isLike:
+        isLikeCliked:
           type: boolean
           description: 좋아요 선택 여부
         createdAt:
@@ -1254,7 +1317,7 @@ components:
       required:
       - title
       - conent
-      - isLike
+      - isLikeCliked
       - createdAt
     UpdatePlaceReviewDto:
       type: object
@@ -1265,13 +1328,13 @@ components:
         conent:
           type: string
           description: 리뷰의 내용
-        isLike:
+        isLikeCliked:
           type: boolean
           description: 좋아요 선택 여부
       required:
       - title
       - conent
-      - isLike
+      - isLikeCliked
     UpdatePlaceReviewResponseDto:
       type: object
       properties:
