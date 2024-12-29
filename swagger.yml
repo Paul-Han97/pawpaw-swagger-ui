@@ -425,7 +425,7 @@ paths:
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               "$ref": "#/components/schemas/UpdateBoardDto"
       responses:
@@ -550,6 +550,17 @@ paths:
       summary: 시설물의 위치 정보를 조회 합니다.
       tags:
       - Place
+  "/api/places/save-entities":
+    post:
+      description: 공공 데이터 API에서 데이터를 가져와 DB에 저장합니다.
+      operationId: PlaceController_savePublicData
+      parameters: []
+      responses:
+        '200':
+          description: 데이터 저장이 완료되었습니다.
+      summary: 공공 데이터를 DB에 저장
+      tags:
+      - Place
   "/api/places/{id}":
     get:
       description: |2-
@@ -607,8 +618,9 @@ paths:
     get:
       description: |2-
 
+            - 장소의 id를 파리미터로 받습니다.
             - 리뷰의 id를 파라미터로 받습니다.
-            - 리뷰의 제목과 내용 그리고 좋아요 상태를 작성할 수 있습니다.
+            - 리뷰의 제목과 내용 그리고 좋아요 상태를 조회할 수 있습니다.
       operationId: PlaceController_getPlaceReview
       parameters:
       - name: id
@@ -629,7 +641,7 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/GetPlaceReviewDto"
+                "$ref": "#/components/schemas/GetPlaceReviewResponseDto"
       summary: 리뷰를 조회 합니다.
       tags:
       - Place
@@ -692,7 +704,7 @@ paths:
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/DeleteReviewResponseDto"
+                "$ref": "#/components/schemas/DeletePlaceReviewResponseDto"
       summary: 리뷰를 삭제 합니다.
       tags:
       - Place
@@ -740,6 +752,24 @@ paths:
       summary: 반려동물의 정보를 수정 합니다.
       tags:
       - Pet
+    delete:
+      description: |2-
+
+            - 반려동물의 ID를 전달받아 해당 데이터를 삭제 합니다.
+      operationId: PetController_deletePet
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 반려동물의 ID
+        schema:
+          type: number
+      responses:
+        '200':
+          description: ''
+      summary: 반려동물을 삭제 합니다.
+      tags:
+      - Pet
 info:
   title: 포포
   description: 포포의 API 명세서 입니다.
@@ -766,14 +796,31 @@ components:
       required:
       - email
       - password
+    UserResponse:
+      type: object
+      properties:
+        id:
+          type: number
+          description: 사용자의 ID
+        role:
+          type: string
+          description: 사용자의 권한
+        canWalkingMate:
+          type: boolean
+          description: 산책메이트 기능 상태
+      required:
+      - id
+      - role
+      - canWalkingMate
     LoginResponseDto:
       type: object
       properties:
-        userId:
-          type: number
+        user:
           description: 사용자의 ID
+          allOf:
+          - "$ref": "#/components/schemas/UserResponse"
       required:
-      - userId
+      - user
     RegisterDto:
       type: object
       properties:
@@ -860,7 +907,7 @@ components:
         nickname:
           type: string
           description: 사용자의 닉네임
-        walkMate:
+        canWalkingMate:
           type: boolean
           description: 사용자의 산책메이트 기능 ON/OFF 여부
         petList:
@@ -870,7 +917,7 @@ components:
             "$ref": "#/components/schemas/PetList"
       required:
       - nickname
-      - walkMate
+      - canWalkingMate
       - petList
     ImageList:
       type: object
@@ -904,7 +951,7 @@ components:
         boardCategory:
           type: string
           description: 게시글의 카테고리
-        isLikeCliked:
+        isLikeClicked:
           type: boolean
           description: 사용자가 게시글의 좋아요를 클릭 했는지 여부
       required:
@@ -913,7 +960,7 @@ components:
       - content
       - imageList
       - boardCategory
-      - isLikeCliked
+      - isLikeClicked
     GetMyReviewListDto:
       type: object
       properties:
@@ -929,7 +976,7 @@ components:
         content:
           type: string
           description: 리뷰 내용
-        isLikeCliked:
+        isLikeClicked:
           type: boolean
           description: 사용자가 리뷰 좋아요를 클릭 했는지 여부
       required:
@@ -937,14 +984,14 @@ components:
       - placeId
       - title
       - content
-      - isLikeCliked
+      - isLikeClicked
     UpdateUserDto:
       type: object
       properties:
         image:
           type: string
           format: binary
-        walkMate:
+        canWalkingMate:
           type: boolean
           description: 산책메이트 ON/OFF 여부
         nickname:
@@ -997,7 +1044,7 @@ components:
         content:
           type: string
           description: 게시글의 내용
-        isLikeCliked:
+        isLikeClicked:
           type: boolean
           description: 사용자가 게시글의 좋아요를 클릭 했는지 여부
         imageList:
@@ -1009,7 +1056,7 @@ components:
       - category
       - title
       - content
-      - isLikeCliked
+      - isLikeClicked
       - imageList
     Author:
       type: object
@@ -1017,12 +1064,12 @@ components:
         id:
           type: number
           description: 게시글 작성자 ID
-        isLikeCliked:
+        isLikeClicked:
           type: boolean
           description: 작성자가 해당 게시글의 좋아요 버튼을 클릭 했는지 여부
       required:
       - id
-      - isLikeCliked
+      - isLikeClicked
     CommentList:
       type: object
       properties:
@@ -1190,6 +1237,9 @@ components:
         id:
           type: number
           description: 리뷰의 ID
+        userId:
+          type: number
+          description: 리뷰 작성자의 ID
         nickname:
           type: string
           description: 리뷰 작성자 닉네임
@@ -1202,19 +1252,23 @@ components:
         content:
           type: string
           description: 리뷰의 내용
-        isLikeCliked:
+        isLikeClicked:
           type: boolean
           description: 리뷰의 좋아요 상태
       required:
       - id
+      - userId
       - nickname
       - imageUrl
       - title
       - content
-      - isLikeCliked
+      - isLikeClicked
     GetPlaceResponseDto:
       type: object
       properties:
+        id:
+          type: number
+          description: 시설의 ID
         name:
           type: string
           description: 시설명
@@ -1260,6 +1314,7 @@ components:
           items:
             "$ref": "#/components/schemas/ReviewList"
       required:
+      - id
       - name
       - roadNameAddress
       - postalAddress
@@ -1280,44 +1335,56 @@ components:
         title:
           type: string
           description: 리뷰의 제목
-        conent:
+        content:
           type: string
           description: 리뷰의 내용
-        isLikeCliked:
+        isLikeClicked:
           type: boolean
           description: 좋아요 선택 여부
       required:
       - title
-      - conent
-      - isLikeCliked
+      - content
+      - isLikeClicked
     CreatePlaceReviewResponseDto:
       type: object
       properties:
-        placeId:
+        reviewId:
           type: number
-          description: 장소의 ID
+          description: 리뷰의 ID
       required:
-      - placeId
-    GetPlaceReviewDto:
+      - reviewId
+    GetPlaceReviewResponseDto:
       type: object
       properties:
+        reviewId:
+          type: number
+          description: 리뷰의 ID
+        author:
+          type: object
+          description: 리뷰 작성자의 정보
+        id:
+          type: number
+          description: 리뷰가 작성된 장소의 ID
         title:
           type: string
           description: 리뷰의 제목
-        conent:
+        content:
           type: string
           description: 리뷰의 내용
-        isLikeCliked:
+        isLikeClicked:
           type: boolean
-          description: 좋아요 선택 여부
+          description: 리뷰의 좋아요 상태
         createdAt:
           format: date-time
           type: string
           description: 리뷰의 작성 날짜
       required:
+      - reviewId
+      - author
+      - id
       - title
-      - conent
-      - isLikeCliked
+      - content
+      - isLikeClicked
       - createdAt
     UpdatePlaceReviewDto:
       type: object
@@ -1325,16 +1392,28 @@ components:
         title:
           type: string
           description: 리뷰의 제목
-        conent:
+        content:
           type: string
           description: 리뷰의 내용
-        isLikeCliked:
+        isLikeClicked:
           type: boolean
           description: 좋아요 선택 여부
+        id:
+          type: number
+          description: 장소의 ID
+        userId:
+          type: number
+          description: 유저의 ID
+        reviewId:
+          type: number
+          description: 리뷰의 ID
       required:
       - title
-      - conent
-      - isLikeCliked
+      - content
+      - isLikeClicked
+      - id
+      - userId
+      - reviewId
     UpdatePlaceReviewResponseDto:
       type: object
       properties:
@@ -1343,14 +1422,14 @@ components:
           description: 장소의 ID
       required:
       - placeId
-    DeleteReviewResponseDto:
+    DeletePlaceReviewResponseDto:
       type: object
       properties:
-        placeId:
+        id:
           type: number
           description: 장소의 ID
       required:
-      - placeId
+      - id
     CreatePetDto:
       type: object
       properties:
