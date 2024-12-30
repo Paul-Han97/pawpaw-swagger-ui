@@ -101,7 +101,7 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/ValidateVerficationDto"
+              "$ref": "#/components/schemas/ValidateVerificationDto"
       responses:
         '200':
           description: ''
@@ -517,10 +517,24 @@ paths:
       operationId: PlaceController_getNearbyPlaceList
       parameters:
       - name: category
-        required: true
+        required: false
         in: query
-        description: 시설물의 카테고리
+        description: 시설물의 카테고리(선택)
         schema:
+          enum:
+          - ANIMAL_PHARMACY
+          - CAFE
+          - ANIMAL
+          - PET_SUPPLIES
+          - BEAUTY
+          - CULTURAL_CENTER
+          - GUESTHOUSE
+          - RESTAURANT
+          - TOURIST_ATTRACTION
+          - PET_BOARDING
+          - MUSEUM
+          - ART_GALLERY
+          - HOTEL
           type: string
       - name: radius
         required: true
@@ -548,17 +562,6 @@ paths:
               schema:
                 "$ref": "#/components/schemas/GetNearbyPlaceListResponseDto"
       summary: 시설물의 위치 정보를 조회 합니다.
-      tags:
-      - Place
-  "/api/places/save-entities":
-    post:
-      description: 공공 데이터 API에서 데이터를 가져와 DB에 저장합니다.
-      operationId: PlaceController_savePublicData
-      parameters: []
-      responses:
-        '200':
-          description: 데이터 저장이 완료되었습니다.
-      summary: 공공 데이터를 DB에 저장
       tags:
       - Place
   "/api/places/{id}":
@@ -853,7 +856,7 @@ components:
           description: 사용자의 이메일
       required:
       - email
-    ValidateVerficationDto:
+    ValidateVerificationDto:
       type: object
       properties:
         email:
@@ -1226,6 +1229,23 @@ components:
         name:
           type: string
           description: 시설의 이름
+        category:
+          type: string
+          description: 시설의 카테고리
+          enum:
+          - 동물약국
+          - 카페
+          - 동물병원
+          - 반려동물용품
+          - 미용
+          - 문예회관
+          - 펜션
+          - 식당
+          - 여행지
+          - 위탁관리
+          - 박물관
+          - 미술관
+          - 호텔
       required:
       - id
       - latitude
