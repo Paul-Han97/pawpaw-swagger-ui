@@ -10,6 +10,19 @@ paths:
           description: ''
       tags:
       - App
+  "/api/auth/login/kakao":
+    post:
+      description: |2-
+
+            - 카카오 로그인 절차를 진행하여 인증 URL을 받습니다.
+      operationId: AuthController_kakaoLoginDto
+      parameters: []
+      responses:
+        '201':
+          description: ''
+      summary: ''
+      tags:
+      - Auth
   "/api/auth/login":
     post:
       description: |2-
@@ -19,8 +32,8 @@ paths:
             - 최소 길이: 8
             - 소문자: 1개 이상
             - 대문자: 1개 이상
-              - 숫자: 1개 이상
-              - 특수문자: 1개 이상
+            - 숫자: 1개 이상
+            - 특수문자: 1개 이상
       operationId: AuthController_login
       parameters: []
       requestBody:
@@ -30,13 +43,25 @@ paths:
             schema:
               "$ref": "#/components/schemas/LoginDto"
       responses:
+        '400':
+          description: 계정 정보가 일치하지 않을 때
+      summary: 서비스에 로그인을 진행 합니다.
+      tags:
+      - Auth
+  "/api/auth/logout":
+    post:
+      description: |2-
+
+            - 서비스에서 로그아웃을 진행 합니다.
+            - 서버에서 사용자의 세션을 종료 합니다.
+      operationId: AuthController_logout
+      parameters: []
+      responses:
         '200':
           description: ''
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/LoginResponseDto"
-      summary: 서비스에 로그인을 진행 합니다.
+        '401':
+          description: ''
+      summary: 서비스에서 로그아웃을 진행 합니다.
       tags:
       - Auth
   "/api/auth/register":
@@ -51,8 +76,8 @@ paths:
               - 대문자: 1개 이상
               - 숫자: 1개 이상
               - 특수문자: 1개 이상
-            - name: 최소 1글자 최대 30글자를 충족해야 한다.
-            - nickname: 최소 1글자 최대 30글자를 충족해야 한다.
+            - name: 최소 1글자 최대 30글자를 충족해야 합니다.
+            - nickname: 최소 1글자 최대 30글자를 충족해야 합니다.
       operationId: AuthController_register
       parameters: []
       requestBody:
@@ -62,8 +87,8 @@ paths:
             schema:
               "$ref": "#/components/schemas/RegisterDto"
       responses:
-        '201':
-          description: ''
+        '422':
+          description: 파일 유효성 에러
       summary: 서비스에 회원가입을 진행 합니다.
       tags:
       - Auth
@@ -93,7 +118,7 @@ paths:
 
             - 이메일을 이용하여 서버 캐시에 저장된 인증코드를 조회 합니다.
             - 서버 캐시에 저장되있는 인증코드와 전송된 인증코드를 비교하여
-            true를 반환하면 해당 캐시 데이터는 삭제 됩니다.
+            true를 반환하면 5분간 서버 캐시에 인증된 이메일로 기록됩니다.
       operationId: AuthController_validateVerificationCode
       parameters: []
       requestBody:
@@ -103,8 +128,10 @@ paths:
             schema:
               "$ref": "#/components/schemas/ValidateVerificationDto"
       responses:
-        '200':
-          description: ''
+        '400':
+          description: 인증코드가 유효하지 않을 때
+        '404':
+          description: 서버 캐시에 저장된 인증코드가 없을 때
       summary: 전송된 인증코드를 확인 합니다.
       tags:
       - Auth
@@ -112,7 +139,7 @@ paths:
     post:
       description: |2-
 
-            - 사용자에게 임시 비밀번호를 발급 합니다.
+            - 이메일 인증이 완료된 사용자에게 임시 비밀번호를 발급 합니다.
             - 발급된 비밀번호로 사용자의 비밀번호가 변경 됩니다.
             - 사용자는 로그인할 때 발급 받은 임시 비밀번호로 로그인 해야 합니다.
       operationId: AuthController_sendTemporaryPasswordEmail
@@ -124,11 +151,59 @@ paths:
             schema:
               "$ref": "#/components/schemas/SendTemporaryPasswordEmailDto"
       responses:
-        '200':
-          description: ''
+        '400':
+          description: 인증된 이메일이 아닐 때
       summary: 사용자에게 임시 비밀번호 발급 메일을 전송 합니다.
       tags:
       - Auth
+  "/api/users/nearby-users-list":
+    get:
+      description: 사용자의 위치를 기반으로 반경 내 walkmate가 true인 사용자 검색.
+      operationId: UserController_getNearbyUsers
+      parameters:
+      - name: radius
+        required: true
+        in: query
+        description: 조회할 반경 (미터 단위)
+        schema:
+          type: number
+      - name: latitude
+        required: true
+        in: query
+        description: 사용자의 위도
+        schema:
+          type: number
+      - name: longitude
+        required: true
+        in: query
+        description: 사용자의 경도
+        schema:
+          type: number
+      responses:
+        '200':
+          description: ''
+      summary: 주변 사용자 검색
+      tags:
+      - User
+  "/api/users/duplicate-email":
+    get:
+      description: |2-
+
+            - 이메일 중복을 확인 합니다.
+      operationId: UserController_duplicateEmail
+      parameters:
+      - name: email
+        required: true
+        in: query
+        description: 사용자의 이메일
+        schema:
+          type: string
+      responses:
+        '400':
+          description: 계정이 이미 존재할 때
+      summary: 이메일 중복을 확인 합니다.
+      tags:
+      - User
   "/api/users/duplicate-nickname":
     get:
       description: |2-
@@ -148,18 +223,178 @@ paths:
       summary: 닉네임 중복을 확인 합니다.
       tags:
       - User
-  "/api/users/{id}/my-pages":
+  "/api/users":
+    get:
+      description: |2-
+
+            - 사용자의 ID로 정보를 조회 합니다.
+      operationId: UserController_getUser
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/GetUserResponseDto"
+      security:
+      - cookie: []
+      summary: 사용자의 정보를 조회 합니다.
+      tags:
+      - User
+    put:
+      description: |2-
+
+            - Body 데이터를 기준으로 사용자의 정보를 수정 합니다.
+            - nickname: 최소 1글자 최대 30글자를 충족해야 합니다.
+            - canWalkingMate: 활성화 / 비활성화를 할 수 있습니다.
+              - 활성화 : true
+              - 비활성화 : false
+            - password: 아래의 조건을 충족해야 합니다.
+              - 최소 길이: 8
+              - 소문자: 1개 이상
+              - 대문자: 1개 이상
+              - 숫자: 1개 이상
+              - 특수문자: 1개 이상
+            - newPassword: 아래의 조건을 충족해야 합니다.
+              - 최소 길이: 8
+              - 소문자: 1개 이상
+              - 대문자: 1개 이상
+              - 숫자: 1개 이상
+              - 특수문자: 1개 이상
+            - nickname: 최소 1글자 최대 30글자를 충족해야 합니다.
+      operationId: UserController_updateUser
+      parameters: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              "$ref": "#/components/schemas/UpdateUserDto"
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/UpdateUserResponseDto"
+      security:
+      - cookie: []
+      summary: 사용자의 정보를 수정 합니다.
+      tags:
+      - User
+  "/api/users/my-pages":
     get:
       description: |2-
 
             - 사용자의 닉네임과 산책메이트 기능 ON/OFF 여부를 조회 합니다.
             - 사용자의 반려동물들의 정보를 조회 합니다.
       operationId: UserController_getMyPage
+      parameters: []
+      responses:
+        default:
+          description: ''
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/GetMyPageResponseDto"
+      security:
+      - cookie: []
+      summary: 사용자와 반려동물의 정보를 조회 합니다.
+      tags:
+      - User
+  "/api/users/boards":
+    get:
+      description: |2-
+
+            - 사용자가 작성한 게시글 목록을 조회 합니다.
+      operationId: UserController_getMyBoardList
+      parameters:
+      - name: cursor
+        required: false
+        in: query
+        description: |2-
+
+              - 조회 시작점의 ID (커서)
+              - 기본값: null
+        schema:
+          type: number
+      - name: take
+        required: false
+        in: query
+        description: |2-
+
+              - 조회 할 데이터 수
+              - 기본값: 7
+        schema:
+          default: 7
+          type: number
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/GetMyBoardListResponseDto"
+      security:
+      - cookie: []
+      summary: 사용자가 작성한 게시글 목록을 조회 합니다.
+      tags:
+      - User
+  "/api/users/reviews":
+    get:
+      description: |2-
+
+            - 사용자가 작성한 리뷰 목록을 조회 합니다.
+      operationId: UserController_getMyReviewList
+      parameters:
+      - name: cursor
+        required: false
+        in: query
+        description: |2-
+
+              - 조회 시작점의 ID (커서)
+              - 기본값: null
+        schema:
+          type: number
+      - name: take
+        required: false
+        in: query
+        description: |2-
+
+              - 조회 할 데이터 수
+              - 기본값: 7
+        schema:
+          default: 7
+          type: number
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/GetMyReviewListDto"
+      security:
+      - cookie: []
+      summary: 사용자가 작성한 리뷰 목록을 조회 합니다.
+      tags:
+      - User
+  "/api/users/{id}":
+    get:
+      description: |2-
+
+              - 사용자의 닉네임과 산책메이트 기능 ON/OFF 여부를 조회 합니다.
+              - 사용자의 반려동물들의 정보를 조회 합니다.
+      operationId: UserController_getUserInfo
       parameters:
       - name: id
         required: true
         in: path
-        description: 사용자의 id
+        description: 사용자의 ID
         schema:
           type: number
       responses:
@@ -172,122 +407,21 @@ paths:
       summary: 사용자와 반려동물의 정보를 조회 합니다.
       tags:
       - User
-  "/api/users/{id}/boards":
-    get:
-      description: |2-
-
-            - 사용자가 작성한 게시글 목록을 조회 합니다.
-      operationId: UserController_getMyBoardList
-      parameters:
-      - name: take
-        required: false
-        in: query
-        description: |2-
-
-              - 조회 할 데이터 수
-              - 기본값 : 7
-              - 최솟값 : 1
-              - 최댓값 : 7
-        schema:
-          default: 7
-          type: number
-      - name: perPage
-        required: false
-        in: query
-        description: |2-
-
-              - 현재 페이지
-              - 기본값 : 1
-              - 최솟값 : 1
-        schema:
-          default: 1
-          type: number
-      - name: id
-        required: true
-        in: path
-        schema:
-          type: number
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/GetMyBoardListResponseDto"
-      summary: 사용자가 작성한 게시글 목록을 조회 합니다.
-      tags:
-      - User
-  "/api/users/{id}/reviews":
-    get:
-      description: |2-
-
-            - 사용자가 작성한 리뷰 목록을 조회 합니다.
-      operationId: UserController_getMyReviewList
-      parameters:
-      - name: take
-        required: false
-        in: query
-        description: |2-
-
-              - 조회 할 데이터 수
-              - 기본값 : 7
-              - 최솟값 : 1
-              - 최댓값 : 7
-        schema:
-          default: 7
-          type: number
-      - name: perPage
-        required: false
-        in: query
-        description: |2-
-
-              - 현재 페이지
-              - 기본값 : 1
-              - 최솟값 : 1
-        schema:
-          default: 1
-          type: number
-      - name: id
-        required: true
-        in: path
-        schema:
-          type: number
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/GetMyReviewListDto"
-      summary: 사용자가 작성한 리뷰 목록을 조회 합니다.
-      tags:
-      - User
-  "/api/users/{id}":
-    put:
-      description: |2-
-
-            - Body 데이터를 기준으로 사용자의 정보를 수정 합니다.
-      operationId: UserController_updateUser
-      parameters:
-      - name: id
-        required: true
-        in: path
-        schema:
-          type: number
+  "/api/users/location":
+    post:
+      description: 클라이언트에서 받은 사용자의 위치 데이터를 저장합니다.
+      operationId: UserController_saveUserLocation
+      parameters: []
       requestBody:
         required: true
         content:
-          multipart/form-data:
+          application/json:
             schema:
-              "$ref": "#/components/schemas/UpdateUserDto"
+              "$ref": "#/components/schemas/SaveUserLocationDto"
       responses:
-        '200':
+        '201':
           description: ''
-      summary: 사용자의 정보를 수정 합니다.
+      summary: 사용자 위치 저장
       tags:
       - User
   "/api/boards/popular-list":
@@ -300,7 +434,8 @@ paths:
         required: true
         in: query
         description: 가져올 게시글 개수
-        schema: {}
+        schema:
+          type: number
       responses:
         '200':
           description: ''
@@ -324,7 +459,8 @@ paths:
         required: true
         in: query
         description: 가져올 게시글 개수
-        schema: {}
+        schema:
+          type: number
       responses:
         '200':
           description: ''
@@ -345,6 +481,25 @@ paths:
             - 카테고리를 선택할 수 있습니다.
       operationId: BoardController_getBoardList
       parameters:
+      - name: cursor
+        required: false
+        in: query
+        description: |2-
+
+              - 조회 시작점의 ID (커서)
+              - 기본값: null
+        schema:
+          type: number
+      - name: take
+        required: false
+        in: query
+        description: |2-
+
+              - 조회 할 데이터 수
+              - 기본값: 7
+        schema:
+          default: 7
+          type: number
       - name: category
         required: false
         in: query
@@ -373,8 +528,8 @@ paths:
       - Board
     post:
       description: "\n    - 게시글을 생성 합니다.\n    - 이미지는 최대 5장 업로드 가능합니다.\n    - 이미지의
-        각 파일은 최대 10MB를 넘지 않아야 합니다.\n    - 제목은 한글 및 공백 포함 최대 30자까지 허용 합니다.\n    - 내용은
-        최대 1,000Byte까지 허용 합니다.\n    "
+        각 파일은 최대 10MB를 넘지 않아야 합니다.\n    - 제목은 한글 및 공백 포함 최소 1자, 최대 30자까지 허용 합니다.\n
+        \   - 내용은 최대 1,500Byte까지 허용 합니다.\n    "
       operationId: BoardController_createBoard
       parameters: []
       requestBody:
@@ -390,6 +545,8 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/CreateBoardResponseDto"
+      security:
+      - cookie: []
       summary: 게시글을 생성 합니다.
       tags:
       - Board
@@ -399,7 +556,13 @@ paths:
 
             - 게시글 ID를 인자로 받아 게시글의 데이터를 조회 합니다.
       operationId: BoardController_getBoard
-      parameters: []
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 게시글의 ID
+        schema:
+          type: number
       responses:
         '200':
           description: ''
@@ -435,6 +598,8 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/UpdateBoardResponseDto"
+      security:
+      - cookie: []
       summary: 게시글을 수정 합니다.
       tags:
       - Board
@@ -453,6 +618,65 @@ paths:
         '200':
           description: ''
       summary: 게시글을 삭제 합니다.
+      tags:
+      - Board
+  "/api/boards/{id}/isLikeClicked":
+    put:
+      description: |2-
+
+            - isLikeClicked를 true로 호출하면 DB에 데이터가 삽입 됩니다.
+            - isLikeClicked를 false로 호출하면 DB에 데이터가 제거 됩니다.
+      operationId: BoardController_updateIsLikeClicked
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 게시글의 ID
+        schema:
+          type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/UpdateIsLikeClickedDto"
+      responses:
+        '200':
+          description: ''
+      security:
+      - cookie: []
+      summary: 로그인된 사용자가 해당 게시글의 좋아요 상태를 변경합니다.
+      tags:
+      - Board
+  "/api/boards/{id}/comments":
+    post:
+      description: |2-
+
+            - 게시글의 ID를 입력받아 작성 합니다.
+      operationId: BoardController_createBoardComment
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 게시글 ID
+        schema:
+          type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/CreateBoardCommentDto"
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CreateBoardCommentResponseDto"
+      security:
+      - cookie: []
+      summary: 댓글을 작성 합니다.
       tags:
       - Board
   "/api/boards/{id}/comments/{commentId}":
@@ -484,6 +708,12 @@ paths:
       responses:
         '200':
           description: ''
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/UpdateBoardcommentResponseDto"
+      security:
+      - cookie: []
       summary: 댓글을 수정 합니다.
       tags:
       - Board
@@ -506,6 +736,8 @@ paths:
       responses:
         '200':
           description: ''
+      security:
+      - cookie: []
       summary: 댓글을 삭제 합니다.
       tags:
       - Board
@@ -614,6 +846,8 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/CreatePlaceReviewResponseDto"
+      security:
+      - cookie: []
       summary: 시설물에 리뷰를 작성 합니다.
       tags:
       - Place
@@ -680,6 +914,8 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/UpdatePlaceReviewResponseDto"
+      security:
+      - cookie: []
       summary: 작성한 리뷰를 수정 합니다.
       tags:
       - Place
@@ -708,6 +944,8 @@ paths:
             application/json:
               schema:
                 "$ref": "#/components/schemas/DeletePlaceReviewResponseDto"
+      security:
+      - cookie: []
       summary: 리뷰를 삭제 합니다.
       tags:
       - Place
@@ -727,14 +965,19 @@ paths:
       responses:
         '200':
           description: ''
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/CreatePetResponseDto"
+      security:
+      - cookie: []
       summary: 반려동물의 정보를 작성 합니다.
       tags:
       - Pet
   "/api/pets/{id}":
     put:
-      description: |2-
-
-            - Body로 받은 데이터를 기반으로 수정 합니다.
+      description: "\n    - Body로 받은 데이터를 기반으로 수정 합니다.\n    - 기존 이미지를 모두 삭제 후 새롭게
+        이미지를 생성합니다.\n    "
       operationId: PetController_updatePetDto
       parameters:
       - name: id
@@ -752,6 +995,8 @@ paths:
       responses:
         '201':
           description: ''
+      security:
+      - cookie: []
       summary: 반려동물의 정보를 수정 합니다.
       tags:
       - Pet
@@ -770,9 +1015,68 @@ paths:
       responses:
         '200':
           description: ''
+      security:
+      - cookie: []
       summary: 반려동물을 삭제 합니다.
       tags:
       - Pet
+  "/api/room-users":
+    get:
+      description: |2-
+
+            - 로그인된 사용자가 연결되어 있는 채팅방을 조회 합니다.
+      operationId: RoomUserController_getRoomList
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/GetRoomListResponseDto"
+      security:
+      - cookie: []
+      summary: 로그인한 사용자의 채팅방 목록을 조회 합니다.
+      tags:
+      - RoomUser
+  "/api/notifications":
+    get:
+      description: |2-
+
+            - 읽지 않은 알림을 조회 합니다.
+            - type이 INVITE 일 때 message는 null 입니다.
+      operationId: NotificationController_getNotification
+      parameters: []
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/GetNotificationResponseDto"
+      summary: 현재 존재하는 알림을 조회 합니다.
+      tags:
+      - Notification
+  "/api/notifications/{id}":
+    put:
+      description: |2-
+
+            - 사용자가 알림을 클릭하여 읽음 상태로 변경 합니다.
+            - 해당 notification의 isRead가 true로 변경 됩니다.
+      operationId: NotificationController_updateReadStatus
+      parameters:
+      - name: id
+        required: true
+        in: path
+        description: 알림의 ID
+        schema:
+          type: number
+      responses:
+        '200':
+          description: 성공적으로 변경 되었을 때
+      summary: 알림의 읽음 상태를 변경 합니다.
+      tags:
+      - Notification
 info:
   title: 포포
   description: 포포의 API 명세서 입니다.
@@ -799,31 +1103,6 @@ components:
       required:
       - email
       - password
-    UserResponse:
-      type: object
-      properties:
-        id:
-          type: number
-          description: 사용자의 ID
-        role:
-          type: string
-          description: 사용자의 권한
-        canWalkingMate:
-          type: boolean
-          description: 산책메이트 기능 상태
-      required:
-      - id
-      - role
-      - canWalkingMate
-    LoginResponseDto:
-      type: object
-      properties:
-        user:
-          description: 사용자의 ID
-          allOf:
-          - "$ref": "#/components/schemas/UserResponse"
-      required:
-      - user
     RegisterDto:
       type: object
       properties:
@@ -876,9 +1155,36 @@ components:
           description: 사용자의 이메일
       required:
       - email
+    GetUserResponseDto:
+      type: object
+      properties:
+        id:
+          type: number
+          description: 사용자의 ID
+        email:
+          type: string
+          description: 사용자의 이메일
+        nickname:
+          type: string
+          description: 사용자의 닉네임
+        imageUrl:
+          type: string
+          description: 사용자의 프로필 이미지
+        canWalkingMate:
+          type: boolean
+          description: 사용자의 산책메이트 여부
+      required:
+      - id
+      - email
+      - nickname
+      - imageUrl
+      - canWalkingMate
     PetList:
       type: object
       properties:
+        id:
+          type: number
+          description: 반려동물 ID
         name:
           type: string
           description: 반려동물 이름
@@ -898,6 +1204,7 @@ components:
           type: string
           description: 반려동물 이미지 URL
       required:
+      - id
       - name
       - age
       - description
@@ -907,20 +1214,28 @@ components:
     GetMyPageResponseDto:
       type: object
       properties:
+        id:
+          type: number
+          description: 사용자의 ID
         nickname:
           type: string
           description: 사용자의 닉네임
         canWalkingMate:
           type: boolean
           description: 사용자의 산책메이트 기능 ON/OFF 여부
+        imageUrl:
+          type: string
+          description: 사용자의 프로필 이미지 URL
         petList:
           description: 반려동물 목록
           type: array
           items:
             "$ref": "#/components/schemas/PetList"
       required:
+      - id
       - nickname
       - canWalkingMate
+      - imageUrl
       - petList
     ImageList:
       type: object
@@ -973,6 +1288,9 @@ components:
         placeId:
           type: number
           description: 장소의 ID
+        placeName:
+          type: string
+          description: 장소의 이름
         title:
           type: string
           description: 리뷰 제목
@@ -985,6 +1303,7 @@ components:
       required:
       - reviewId
       - placeId
+      - placeName
       - title
       - content
       - isLikeClicked
@@ -1002,7 +1321,30 @@ components:
           description: 사용자의 닉네임
         password:
           type: string
-          description: 사용자의 현재 비밀번호
+          description: 사용자의 현재 비밀번호 (변경 시 필요)
+        newPassword:
+          type: string
+          description: 사용자의 새로운 비밀번호 (변경 시 필요)
+    UpdateUserResponseDto:
+      type: object
+      properties:
+        id:
+          type: number
+          description: 사용자의 ID
+      required:
+      - id
+    SaveUserLocationDto:
+      type: object
+      properties:
+        latitude:
+          type: number
+          description: 사용자의 위도
+        longitude:
+          type: number
+          description: 사용자의 경도
+      required:
+      - latitude
+      - longitude
     GetPopularListResponseDto:
       type: object
       properties:
@@ -1015,32 +1357,63 @@ components:
         imageUrl:
           type: string
           description: 게시글의 이미지 URL
+        category:
+          type: string
+          description: 게시글의 카테고리
       required:
       - id
       - title
       - imageUrl
+      - category
     GetLatestListResponseDto:
       type: object
       properties:
         id:
           type: number
-          description: board의 id
+          description: 게시글의 ID
         title:
           type: string
           description: 게시글의 제목
         imageUrl:
           type: string
           description: 게시글의 이미지 URL
+        category:
+          type: string
+          description: 게시글의 카테고리
       required:
       - id
       - title
       - imageUrl
-    GetBoardListResponseDto:
+      - category
+    Author:
       type: object
       properties:
+        id:
+          type: number
+          description: 작성자의 ID
+        nickname:
+          type: string
+          description: 작성자의 닉네임
+        imageUrl:
+          type: string
+          description: 작성자의 프로필 이미지
+      required:
+      - id
+      - nickname
+      - imageUrl
+    BoardList:
+      type: object
+      properties:
+        id:
+          type: number
+          description: 게시글의 제목
         category:
           type: string
           description: 게시글의 카테고리
+        author:
+          description: 게시글 작성자
+          allOf:
+          - "$ref": "#/components/schemas/Author"
         title:
           type: string
           description: 게시글의 제목
@@ -1051,37 +1424,38 @@ components:
           type: boolean
           description: 사용자가 게시글의 좋아요를 클릭 했는지 여부
         imageList:
-          description: 이미지 리스트
+          description: 이미지 목록
           type: array
           items:
             "$ref": "#/components/schemas/ImageList"
       required:
+      - id
       - category
+      - author
       - title
       - content
       - isLikeClicked
       - imageList
-    Author:
+    GetBoardListResponseDto:
+      type: object
+      properties:
+        boardList:
+          description: 게시글 목록
+          type: array
+          items:
+            "$ref": "#/components/schemas/BoardList"
+        total:
+          type: number
+          description: 조회된 게시글 수
+      required:
+      - boardList
+      - total
+    CommentList:
       type: object
       properties:
         id:
           type: number
-          description: 게시글 작성자 ID
-        isLikeClicked:
-          type: boolean
-          description: 작성자가 해당 게시글의 좋아요 버튼을 클릭 했는지 여부
-      required:
-      - id
-      - isLikeClicked
-    CommentList:
-      type: object
-      properties:
-        nickname:
-          type: string
-          description: 댓글 작성자의 닉네임
-        imageUrl:
-          type: string
-          description: 댓글 작성자의 프로필 이미지
+          description: 댓글의 ID
         content:
           type: string
           description: 댓글의 내용
@@ -1089,11 +1463,15 @@ components:
           format: date-time
           type: string
           description: 댓글의 작성 날짜
+        author:
+          description: 댓글 작성자
+          allOf:
+          - "$ref": "#/components/schemas/Author"
       required:
-      - nickname
-      - imageUrl
+      - id
       - content
       - createdAt
+      - author
     GetBoardResponseDto:
       type: object
       properties:
@@ -1117,6 +1495,9 @@ components:
           description: 게시글 작성자
           allOf:
           - "$ref": "#/components/schemas/Author"
+        isLikeClicked:
+          type: boolean
+          description: 사용자가 게시글의 좋아요를 클릭 했는지 여부
         imageList:
           description: 이미지 리스트
           type: array
@@ -1134,6 +1515,7 @@ components:
       - likeCount
       - createdAt
       - author
+      - isLikeClicked
       - imageList
       - commentList
     CreateBoardDto:
@@ -1171,6 +1553,14 @@ components:
           description: 게시글의 ID
       required:
       - id
+    UpdateIsLikeClickedDto:
+      type: object
+      properties:
+        isLikeClicked:
+          type: boolean
+          description: 게시글 좋아요 클릭 여부
+      required:
+      - isLikeClicked
     UpdateBoardDto:
       type: object
       properties:
@@ -1206,6 +1596,17 @@ components:
           description: 게시글의 ID
       required:
       - id
+    CreateBoardCommentDto:
+      type: object
+      properties:
+        content:
+          type: string
+          description: 댓글의 내용
+      required:
+      - content
+    CreateBoardCommentResponseDto:
+      type: object
+      properties: {}
     UpdateBoardCommentDto:
       type: object
       properties:
@@ -1214,6 +1615,14 @@ components:
           description: 댓글의 내용
       required:
       - content
+    UpdateBoardcommentResponseDto:
+      type: object
+      properties:
+        id:
+          type: number
+          description: 게시글의 ID
+      required:
+      - id
     GetNearbyPlaceListResponseDto:
       type: object
       properties:
@@ -1418,22 +1827,10 @@ components:
         isLikeClicked:
           type: boolean
           description: 좋아요 선택 여부
-        id:
-          type: number
-          description: 장소의 ID
-        userId:
-          type: number
-          description: 유저의 ID
-        reviewId:
-          type: number
-          description: 리뷰의 ID
       required:
       - title
       - content
       - isLikeClicked
-      - id
-      - userId
-      - reviewId
     UpdatePlaceReviewResponseDto:
       type: object
       properties:
@@ -1469,15 +1866,30 @@ components:
         gender:
           type: string
           description: 반려동물 성별
+          enum:
+          - MALE
+          - FEMALE
         size:
           type: string
           description: 반려동물 크기
+          enum:
+          - SMALL
+          - MEDIUM
+          - LARGE
       required:
       - name
       - age
       - description
       - gender
       - size
+    CreatePetResponseDto:
+      type: object
+      properties:
+        id:
+          type: number
+          description: 반려동물 ID
+      required:
+      - id
     UpdatePetDto:
       type: object
       properties:
@@ -1497,6 +1909,119 @@ components:
         gender:
           type: string
           description: 반려동물 성별
+          enum:
+          - MALE
+          - FEMALE
         size:
           type: string
           description: 반려동물 크기
+          enum:
+          - SMALL
+          - MEDIUM
+          - LARGE
+    Sender:
+      type: object
+      properties:
+        id:
+          type: number
+          description: 송신자 ID
+        nickname:
+          type: string
+          description: 송신자 닉네임
+        imageUrl:
+          type: string
+          description: 송신자 프로필 이미지
+      required:
+      - id
+      - nickname
+      - imageUrl
+    RoomList:
+      type: object
+      properties:
+        name:
+          type: string
+          description: 채팅방 이름
+        sender:
+          description: 메세지 송신자
+          allOf:
+          - "$ref": "#/components/schemas/Sender"
+        lastMessage:
+          type: string
+          description: 해당 채팅방에서 마지막으로 보낸 메세지
+        hasNewMessage:
+          type: boolean
+          description: 새로운 메세지 존재 여부
+      required:
+      - name
+      - sender
+      - lastMessage
+      - hasNewMessage
+    GetRoomListResponseDto:
+      type: object
+      properties:
+        roomList:
+          description: 채팅방 목록
+          type: array
+          items:
+            "$ref": "#/components/schemas/RoomList"
+      required:
+      - roomList
+    Recipient:
+      type: object
+      properties:
+        id:
+          type: number
+          description: 수신자 ID
+        nickname:
+          type: string
+          description: '송신자 '
+      required:
+      - id
+      - nickname
+    NotificationList:
+      type: object
+      properties:
+        id:
+          type: number
+          description: 알림의 ID
+        sender:
+          description: 알림을 보낸 사용자
+          allOf:
+          - "$ref": "#/components/schemas/Sender"
+        recipient:
+          description: 알림을 받는 사용자
+          allOf:
+          - "$ref": "#/components/schemas/Recipient"
+        type:
+          type: string
+          description: 알림의 종류
+          enum:
+          - RECEIVE_MESSAGE
+          - INVITE
+        message:
+          type: string
+          description: 채팅 내용
+        roomName:
+          type: string
+          description: 채팅방 이름
+        isRead:
+          type: boolean
+          description: 알림을 읽은 상태
+      required:
+      - id
+      - sender
+      - recipient
+      - type
+      - message
+      - roomName
+      - isRead
+    GetNotificationResponseDto:
+      type: object
+      properties:
+        notificationList:
+          description: 알림 목록
+          type: array
+          items:
+            "$ref": "#/components/schemas/NotificationList"
+      required:
+      - notificationList
